@@ -1,0 +1,36 @@
+Flyway Teams Edition 7.14.1 by Redgate
+Database: jdbc:postgresql:pssrv (PostgreSQL 12.14)
+----------------------------------------
+Flyway Teams features are enabled by default for the next 27 days. Learn more at https://rd.gt/3A4IWym
+----------------------------------------
+Successfully validated 9 migrations (execution time 00:00.031s)
+Current version of schema "public": 1.0.0.0000
+Migrating schema "public" to version "1.0.0.0001 - create table consultation room"
+Migrating schema "public" to version "1.0.0.0002 - create table error codes"
+Migrating schema "public" with repeatable migration "0001 sp drop function"
+Migrating schema "public" with repeatable migration "0003 sp raise exception"
+DB: 2023-05-30 13:51:32.39466+02,DROP FUNCTION public.sp_raise_exception(error_code integer, error_text character varying, release_requests_id bigint[], hint json)
++------------------+
+| sp_drop_function |
++------------------+
+|                  |
++------------------+
+
+Migrating schema "public" with repeatable migration "insert table error codes"
+Migrating schema "public" with repeatable migration "sp consultation room check access"
+DB: 2023-05-30 13:51:32.428859+02,DROP FUNCTION public.sp_consultation_room_check_access(room_id bigint, person_id bigint, OUT has_access boolean)
++------------------+
+| sp_drop_function |
++------------------+
+|                  |
++------------------+
+
+Migrating schema "public" with repeatable migration "sp create consultation room"
+DB: 2023-05-30 13:51:32.434287+02,DROP FUNCTION public.sp_create_consultation_room(room_id bigint, person_id_create bigint, participants bigint[], datetime_open timestamp with time zone)
++------------------+
+| sp_drop_function |
++------------------+
+|                  |
++------------------+
+
+Successfully applied 7 migrations to schema "public", now at version v1.0.0.0002 (execution time 00:00.144s)

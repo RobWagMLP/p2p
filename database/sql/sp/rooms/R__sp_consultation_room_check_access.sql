@@ -10,7 +10,7 @@ as
 $$
 declare
   v_room_id          alias for room_id;
-  v_person_id        alias for person ;
+  v_person_id        alias for person_id;
   v_has_access       alias for has_access;
 begin        
    has_access = exists(select 1 

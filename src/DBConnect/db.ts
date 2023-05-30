@@ -1,4 +1,5 @@
 import pkg from 'pg'
+import {ResultStatus} from '../interfaces/dbenums.ts'
 
 export class DB {
     private static db: DB;
@@ -21,7 +22,7 @@ export class DB {
         return this.db;
     }
 
-    async executeSp(sp_name: string, params: {[key: string] : any}, resCallback: (result : {status: string, res?: pkg.QueryResult, error?: Error}) => void) {
+    async executeSp(sp_name: string, params: {[key: string] : any}, resCallback: (result : {status: ResultStatus, res?: pkg.QueryResult, error?: Error}) => void) {
         const client = await this.pool.connect();
 
         let callstring: string = `SELECT * FROM ${sp_name}(`;
@@ -29,24 +30,28 @@ export class DB {
         let paramsArr: Array<any> = [];
 
         for(const o in params) {
-            callstring += `${o} := $${i}, `
+            if(i > 1) {
+                callstring +=  `, `;
+            }
+            callstring += `${o} := $${i}`
             ++i;
             paramsArr.push(params[o]);
         }
-        callstring += ')';
+        callstring += ');';
+        console.log(callstring);
         try{
             client.query(callstring, paramsArr, (err: Error, res: pkg.QueryResult) => {
                 if(err) {
                     client.release();
-                    resCallback({status: 'error', error: err});
+                    resCallback({status: ResultStatus.Error, error: err});
                 } else {
                     client.release();
-                    resCallback({status: 'success', res: res});
+                    resCallback({status: ResultStatus.Success, res: res});
                 }
             })
         } catch(error: any) {
             client.release();
-            resCallback({status: 'error', error: {message: "unknown_error", name: error}});
+            resCallback({status: ResultStatus.Error, error: {message: "unknown_error", name: error}});
         }
     }
 }

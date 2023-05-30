@@ -1,16 +1,18 @@
 import * as https from 'https'
-import express from 'express'
+import express, {Request, Response}  from 'express'
 import * as dotenv from "dotenv";
 import { Socket } from './socket/socket.ts';
 import { HTTPServer } from './HtppServer/httpserver.ts';
+import fs from 'fs';
 
-dotenv.config({ path: '../.env' });
-if(process.env.env === 'local') {
+dotenv.config({ path: '.env' });
+
+if(process.env.ENV === 'local') {
     console.log("Local env, disbaling cert validation")
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
-const port: string = process.env.APP_PORT ?? "443";
+const port: string = process.env.APP_PORT ?? "4430";
 const host: string = process.env.APP_HOST ?? "127.0.0.1";
 
 const app = express();

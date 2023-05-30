@@ -1,0 +1,6 @@
+node_modules
+
+# production
+/build
+deploy/build/
+dev/.build_number

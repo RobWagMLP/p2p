@@ -11,7 +11,7 @@ create table consultation_room(
    consultation_room_id                bigint    not null,
    person_id                           bigint    not null,
    datetime_create                     timestamp with time zone not null,
-   datetime_invalidate                 timestamp with time zone not null,
+   datetime_invalidate                 timestamp with time zone         ,
    valid                               boolean   not null               ,
    constraint consultation_room_access_pk primary key(consultation_room_access_id),
    constraint consultation_room_access_fk foreign key(consultation_room_id) references consultation_room(consultation_room_id) );

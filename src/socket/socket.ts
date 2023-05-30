@@ -42,8 +42,7 @@ export class Socket {
             const header: jwt.JwtHeader = jwtDec.header;
             
             const kid    = header.kid;
-            const signer = header['signer'].split(":");
-            const region = signer[3];
+            const region = header['signer'].split(":")[3];
 
             let cert: string;
 
@@ -54,7 +53,7 @@ export class Socket {
             });
             try{
                 let jwtVer: jwt.JwtPayload = jwt.verify(data, cert, {algorithms: ['ES256']}) as jwt.JwtPayload;
-                userObj["persom_id"] = jwtVer["sub"];
+                userObj["person_id"] = parseInt(jwtVer["sub"]);
                 userObj["email"]     = jwtVer["email"];
                 userObj["user_roles"]= jwtVer["user_roles"];
 
@@ -63,7 +62,7 @@ export class Socket {
                 return false;
             }
 
-        } else if(info.req.headers['user-data'] && process.env.env === 'local') {
+        } else if(info.req.headers['user-data'] && process.env.ENV === 'local') {
             try {
                 userObj = JSON.parse(info.req.headers['user-data'] as string);
             } catch(err: any) {
@@ -105,7 +104,7 @@ export class Socket {
             ws.on('error', console.error);
 
             ws.on('message', (data: RawData) => {
-                console.log(data);
+                console.log(data.toString());
                 ws.send("got it");
             })
         });

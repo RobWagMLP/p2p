@@ -6,7 +6,7 @@ create or replace  function sp_create_consultation_room(
   participants        bigint[]  ,
   datetime_open       timestamp with time zone default null
 )
-returns void 
+returns void  
 as
 $$
 declare
@@ -36,12 +36,12 @@ begin
         datetime_create       ,
         valid  
       ) 
-      select(
+      select
         v_room_id             ,
         participant_id        ,
         statement_timestamp() ,
         true
-      ) from unnest(v_participants) as participant_id;
+      from unnest(v_participants) as participant_id;
 end;
 $$
 language plpgsql

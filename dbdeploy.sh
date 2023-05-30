@@ -2,7 +2,7 @@
 ACTION="$1"
 if [ -z "$ACTION" ]; then ACTION="migrate"; fi
 flyway "$ACTION" \
- -locations="filesystem:git/P2PStream/database/sql/data,filesystem:ngit/P2PStream/database/sql/ddl,filesystem:git/P2PStream/database/sql/sp" \
+ -locations="filesystem:database/sql/data,filesystem:database/sql/ddl,filesystem:database/sql/sp" \
  -user=postgres \
  -url="jdbc:postgresql:pssrv" \
  -password=pwpostgres \
