@@ -1,5 +1,5 @@
 import pkg from 'pg'
-import {ResultStatus} from '../interfaces/dbenums.ts'
+import {DBResult, ResultStatus} from '../interfaces/db.ts'
 
 export class DB {
     private static db: DB;
@@ -22,7 +22,7 @@ export class DB {
         return this.db;
     }
 
-    async executeSp(sp_name: string, params: {[key: string] : any}, resCallback: (result : {status: ResultStatus, res?: pkg.QueryResult, error?: Error}) => void) {
+    async executeSp(sp_name: string, params: {[key: string] : any}, resCallback: (result : DBResult) => void) {
         const client = await this.pool.connect();
 
         let callstring: string = `SELECT * FROM ${sp_name}(`;

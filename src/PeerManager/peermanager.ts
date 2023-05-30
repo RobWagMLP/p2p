@@ -19,7 +19,7 @@ export class PeerManager {
         return this.userMap.get(req);
     }
 
-    deleteUser(req: IncomingMessage) {
+    removeUser(req: IncomingMessage) {
         this.userMap.delete(req);
     }
 
@@ -37,5 +37,38 @@ export class PeerManager {
 
     removeRoom(room_id) {
         this.connectionMap.delete(room_id);
+    }
+
+    getRoomIdForUser(person_id: number): number {
+        for(const o in this.connectionMap) {
+            const userList = this.connectionMap.get(parseInt(o));
+            if( userList != null ) {
+                for(const u of userList) {
+                    if(u.user.person_id === person_id) {
+                        return parseInt(o);
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+
+    removePeer(req: IncomingMessage, room_id: number) {
+        const person_id = this.userMap.get(req).person_id;
+        if(person_id != null) {
+            this.userMap.delete(req);
+            const userArr = this.connectionMap.get(room_id);
+            if(userArr == null) {
+                return;
+            }
+            for(const o in userArr) {
+                if(userArr[o].user.person_id === person_id) {
+                    const newArr = userArr.splice(parseInt(o), 1);
+                    this.connectionMap.set(room_id, newArr);
+                    return;
+                }
+            }
+            
+        }
     }
 }

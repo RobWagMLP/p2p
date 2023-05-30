@@ -29,7 +29,8 @@ socket.initSocket();
 
 console.log("Socket initialized");
 
-const server = new HTTPServer(app);
+const server = new HTTPServer(app, (room_id: number) => {socket.deleteRoom(room_id)});
+
 server.initServer();
 
 console.log("HTTP Server initialized");
