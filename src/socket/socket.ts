@@ -30,6 +30,8 @@ export class Socket {
 
         this.peerManager = new PeerManager();
         this.db = DB.getInstance();
+
+        this.deleteRoom = this.deleteRoom.bind(this);
     }
 
     async verifyClientInfo(info: Info) : Promise<boolean> {
@@ -92,13 +94,14 @@ export class Socket {
             if(result.status === ResultStatus.Error) {
                 console.log(result.error);
 
-                return false;
+                callback(false);
             }
             callback(result.res.rows[0].has_access);
         })
     }
 
     deleteRoom(room_id: number) {
+   
         const room = this.peerManager.getRoom(room_id);
         if(room == null) {
             return;
@@ -136,7 +139,7 @@ export class Socket {
                             const room_id = request['room_id'];
 
                             this.peerHasAccesToRoom(room_id, user.person_id, (access: boolean)   => { 
-                                console.log(access);
+ 
                                 if(access) {
                                     connection_room_id = room_id;
                                     const room = this.peerManager.getRoom(room_id);
