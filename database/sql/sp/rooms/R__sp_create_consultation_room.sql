@@ -14,7 +14,12 @@ declare
   v_person_id_create alias for person_id_create;
   v_participants     alias for participants;
   v_datetime_open    alias for datetime_open;
-begin        
+begin   
+
+   if array_length(v_participants) = 0 then
+      perform sp_raise_exception(1000001);
+   end if;
+
    insert 
      into consultation_room(
       consultation_room_id,

@@ -2,7 +2,7 @@
 --------------------------------------------------------
 --dank der referentiellen integritaet koennen wir die tabelle nicht einfach leer machen und neu befuellen...
 with new_values (error_code,procedure                    ,error_text                          )
-      as(values (1000001   ,'sp_create_room'             ,'invalid data provided'                                         ),
+      as(values (1000001   ,'sp_create_room'             ,'room without participants is not valid'                        ),
                 (9999999   ,'to_be_named'                ,'error_text to be set'                                          )
                  ),
      deleted   as(delete from error_code

@@ -14,7 +14,7 @@ begin
       where cr.consultation_room_id = v_room_id; 
    
    update consultation_room_access as ca
-      set datetime_invalidate = statement_timestamp()
+      set datetime_invalidate = statement_timestamp(),
           valid               = false
       where ca.consultation_room_id = v_room_id;
 end;

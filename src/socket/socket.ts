@@ -6,7 +6,7 @@ import { IncomingMessage, OutgoingHttpHeaders } from 'http';
 import { User } from '../interfaces/user.ts';
 import jwt from 'jsonwebtoken'
 import fetch, {Response} from "node-fetch";
-import { DBResult, ResultStatus } from "src/interfaces/db.ts";
+import { DBResult, ResultStatus } from "../interfaces/db.ts";
 
 
 interface Info {
@@ -78,10 +78,7 @@ export class Socket {
             return false;
 
         }
-
-        this.peerManager.addUser(userObj as User, info.req);
-        
-        return true;
+        return this.peerManager.addUser(userObj as User, info.req);
     }
 
     async getAmznCert(region: string, kid: string) : Promise<string> {
@@ -90,18 +87,15 @@ export class Socket {
         .then((resultstring: string) => resultstring );
     }
 
-    peerHasAccesToRoom(room_id: number, person_id: number): boolean {
-        let access = false;
+    peerHasAccesToRoom(room_id: number, person_id: number, callback: (access: boolean) => void) {
         this.db.executeSp('sp_consultation_room_check_access', {room_id : room_id, person_id: person_id}, (result: DBResult) => {
             if(result.status === ResultStatus.Error) {
                 console.log(result.error);
 
                 return false;
             }
-            console.log(result.res);
-            const res = result.res.rows;
+            callback(result.res.rows[0].has_access);
         })
-        return access;
     }
 
     deleteRoom(room_id: number) {
@@ -120,8 +114,6 @@ export class Socket {
     initSocket() {
         this.wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
             
-            console.log(req);
-
             const user: User | undefined = this.peerManager.getUser(req);
             let connection_room_id = -1;
 
@@ -140,24 +132,28 @@ export class Socket {
                     const request = JSON.parse(data.toString());
 
                     switch(request.type) {
-                        case 'send_ofer_to_peers': {
+                        case 'send_offer_to_peers': {
                             const room_id = request['room_id'];
-                            if(this.peerHasAccesToRoom(room_id, user.person_id)) {
 
-                                connection_room_id = room_id;
-                                const room = this.peerManager.getRoom(room_id);
+                            this.peerHasAccesToRoom(room_id, user.person_id, (access: boolean)   => { 
+                                console.log(access);
+                                if(access) {
+                                    connection_room_id = room_id;
+                                    const room = this.peerManager.getRoom(room_id);
 
-                                if(room != null) {
-                                    for(const o of room) {
-                                        o.connection.send(JSON.stringify({type: "offer", offer: request.offer}));
+                                    if(room != null) {
+                                        for(const o of room) {
+                                            o.connection.send(JSON.stringify({type: "offer", offer: request.offer, person_id: user.person_id}));
+                                        }
                                     }
-                                }
-                                this.peerManager.addToRoomOrCreateRoom(room_id, {user: user, connection: ws });
-                                ws.send(JSON.stringify({type: "status", status: "enter_room"}))
-                            } else {
-                                ws.send(JSON.stringify({type: "status", status: "no_access_to_room"}));
-                            }
+                                    this.peerManager.addToRoomOrCreateRoom(room_id, {user: user, connection: ws });
+                                    ws.send(JSON.stringify({type: "status", status: "enter_room"}))
+                                } else {
+                                    ws.send(JSON.stringify({type: "status", status: "no_access_to_room"}));
+                                }                                                 
+                            })
                         }
+                        break;
                         case 'accept_offer_from_peer': {
                             const room_id = connection_room_id;
 
@@ -166,14 +162,14 @@ export class Socket {
 
                                 for(const o of room) {
                                     if(o.user.person_id !== user.person_id) {
-                                        o.connection.send(JSON.stringify({type: "answer", candidate: request.answer}));
+                                        o.connection.send(JSON.stringify({type: "answer", answer: request.answer, person_id: user.person_id}));
                                     }
                                 }
                             } else {
                                 ws.send(JSON.stringify({type: "error", errtext: "no room set for offer"}));
                             }
                         }
-
+                        break;
                         case 'send_ice_candidate_to_peers': {
                             const room_id = connection_room_id;
 
@@ -182,15 +178,14 @@ export class Socket {
 
                                 for(const o of room) {
                                     if(o.user.person_id !== user.person_id) {
-                                        o.connection.send(JSON.stringify({type: "ice_candidate", candidate: request.candidate}));
+                                        o.connection.send(JSON.stringify({type: "ice_candidate", candidate: request.candidate, person_id: user.person_id}));
                                     }
                                 }
                             } else {
                                 ws.send(JSON.stringify({type: "error", errtext: "no room set for ice candidate"}));
                             }
                         }
-                        
-
+                        break;
                         default: return;
                     }
                     

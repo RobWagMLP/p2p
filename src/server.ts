@@ -29,10 +29,12 @@ socket.initSocket();
 
 console.log("Socket initialized");
 
-const server = new HTTPServer(app, (room_id: number) => {socket.deleteRoom(room_id)});
+const server = new HTTPServer(app, socket.deleteRoom);
 
 server.initServer();
 
 console.log("HTTP Server initialized");
 
-httpsServ.listen(parseInt(port), host);
+httpsServ.listen(parseInt(port), host, () => {
+    console.log(`listening on ${host}:${port}`);
+});
