@@ -60,6 +60,18 @@ export class PeerManager {
         return -1;
     }
 
+    getUserList(room_id: number): Array<number> {
+        const out = [];
+        const user = this.connectionMap.get(room_id);
+        if(user == null) {
+            return out;
+        }
+        for(const o of user) {
+            out.push(o.user.person_id);
+        }
+        return out;
+    }
+
     removePeer(req: IncomingMessage, room_id: number) {
         const person_id = this.userMap.get(req).person_id;
 

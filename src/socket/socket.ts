@@ -37,7 +37,7 @@ export class Socket {
     async verifyClientInfo(info: Info) : Promise<boolean> {
         let userObj = {};
       
-        console.log(info.req.headers);
+        console.log(info.req.url);
 
         if(info.req.headers['x-amzn-oidc-data']) {
 
@@ -67,9 +67,11 @@ export class Socket {
                 return false;
             }
 
-        } else if(info.req.headers['user-data'] && process.env.ENV === 'local') {
+        } else if(info.req.url.includes("?") && process.env.ENV === 'local') { // only for local testing
             try {
-                userObj = JSON.parse(info.req.headers['user-data'] as string);
+                const person_id = parseInt(info.req.url.split("=") [1]);
+                userObj["person_id"] = person_id;
+                //userObj = JSON.parse(info.req.headers['user-data'] as string);
             } catch(err: any) {
                 console.log(err);
                 return false;
@@ -103,13 +105,14 @@ export class Socket {
     deleteRoom(room_id: number) {
    
         const room = this.peerManager.getRoom(room_id);
+
         if(room == null) {
             return;
         }
 
         for(const o of room) {
             o.connection.send(JSON.stringify({type: "order", order: "disconnect"}));
-            o.connection.close(5400);
+            o.connection.close();
         }
         this.peerManager.removeRoom(room_id);
     }
@@ -121,7 +124,7 @@ export class Socket {
             let connection_room_id = -1;
 
             if(user == null) {
-                ws.send(JSON.stringify({type: "error", errtext: "unknwon user"}));
+                ws.send(JSON.stringify({type: "error", error: "unknwon user"}));
                 return;
             }
 
@@ -135,26 +138,36 @@ export class Socket {
                     const request = JSON.parse(data.toString());
 
                     switch(request.type) {
-                        case 'send_offer_to_peers': {
+                        case 'request_room': {
                             const room_id = request['room_id'];
 
                             this.peerHasAccesToRoom(room_id, user.person_id, (access: boolean)   => { 
  
                                 if(access) {
                                     connection_room_id = room_id;
-                                    const room = this.peerManager.getRoom(room_id);
+                                    const userList = this.peerManager.getUserList(room_id);
+                                  
+                                    ws.send(JSON.stringify({type: "room_info", userlist: userList}))
+                                } else {
+                                    ws.send(JSON.stringify({type: "error", error: "no_access_to_room"}));
+                                }
+                            })                  
+                        }
+                        case 'send_offer_to_peers': {
+                            if(connection_room_id >= 0) {
+                                    const room = this.peerManager.getRoom(connection_room_id);
 
                                     if(room != null) {
                                         for(const o of room) {
                                             o.connection.send(JSON.stringify({type: "offer", offer: request.offer, person_id: user.person_id}));
                                         }
                                     }
-                                    this.peerManager.addToRoomOrCreateRoom(room_id, {user: user, connection: ws });
+                                    this.peerManager.addToRoomOrCreateRoom(connection_room_id, {user: user, connection: ws });
+
                                     ws.send(JSON.stringify({type: "status", status: "enter_room"}))
                                 } else {
-                                    ws.send(JSON.stringify({type: "status", status: "no_access_to_room"}));
+                                    ws.send(JSON.stringify({type: "error", error: "no_room_requested"}));
                                 }                                                 
-                            })
                         }
                         break;
                         case 'accept_offer_from_peer': {
@@ -169,7 +182,7 @@ export class Socket {
                                     }
                                 }
                             } else {
-                                ws.send(JSON.stringify({type: "error", errtext: "no room set for offer"}));
+                                ws.send(JSON.stringify({type: "error", error: "no room set for offer"}));
                             }
                         }
                         break;
@@ -185,7 +198,7 @@ export class Socket {
                                     }
                                 }
                             } else {
-                                ws.send(JSON.stringify({type: "error", errtext: "no room set for ice candidate"}));
+                                ws.send(JSON.stringify({type: "error", error: "no room set for ice candidate"}));
                             }
                         }
                         break;
@@ -193,12 +206,12 @@ export class Socket {
                     }
                     
                 } catch(err) {
-                    ws.send(JSON.stringify({type: "error", errtext: "invalid_data_sent"}));
+                    ws.send(JSON.stringify({type: "error", error: "invalid_data_sent"}));
                 }
             })
 
             ws.on('close', (code: Number, reason: Buffer) => {
-                console.log(`Connection closed with Peer ${user.person_id} due to reason ${reason.toString()}`);
+                console.log(`Connection closed with Peer ${user.person_id} due to reason ${reason.toString() ?? 'unknown'} and code ${code}`);
 
                 this.peerManager.removePeer(req, connection_room_id);
             });

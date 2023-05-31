@@ -24,6 +24,7 @@ export class HTTPServer {
     }
 
     initServer() {
+
         this.app.all('*', (req: Request, res: Response) => {
             if(!this.validateHeader(req, res)) {
                 return;
@@ -36,6 +37,7 @@ export class HTTPServer {
             try{
                 console.log(req.body);
                 const body = req.body;
+
                 if(body['room_id'] && body['person_id_create'] && body['participants']) {
                     this.db.executeSp('sp_create_consultation_room', body, (result : DBResult) => {
                         if(result.status === ResultStatus.Error) {
@@ -48,7 +50,7 @@ export class HTTPServer {
                     })
                 } else {
                     res.statusCode = 401;
-                    res.send({status: 'error', error: 'no complete data provided'});
+                    res.send({status: 'error', error: 'incomplete data provided'});
                 }
             } catch(err: any) {
                 res.statusCode = 401;
@@ -62,11 +64,13 @@ export class HTTPServer {
                 res.send({status: 'error', error: 'no room_id provided'});
             }
             const room_id = parseInt(req.query['room_id'] as string);
+
             this.deleteRoomCallback(room_id);
 
             this.db.executeSp('sp_close_consultation_room', {room_id: room_id}, (result : DBResult) => {
                 if(result.status === ResultStatus.Error) {
                     console.log(result.error);
+                    
                     res.statusCode = 401;
                     res.send({status: 'error', error: result.error});
                 } else {

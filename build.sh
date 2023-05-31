@@ -4,4 +4,4 @@ cp "env/$environment.env" "$envFile"
 source "$envFile"
 echo "Building $environment"
 
-npm run
+npx ts-node-esm src/server.ts
