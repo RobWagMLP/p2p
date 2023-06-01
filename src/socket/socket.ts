@@ -146,6 +146,8 @@ export class Socket {
                                 if(access) {
                                     connection_room_id = room_id;
                                     const userList = this.peerManager.getUserList(room_id);
+
+                                    this.peerManager.addToRoomOrCreateRoom(connection_room_id, {user: user, connection: ws });
                                   
                                     ws.send(JSON.stringify({type: "room_info", userlist: userList}))
                                 } else {
@@ -159,11 +161,11 @@ export class Socket {
 
                                     if(room != null) {
                                         for(const o of room) {
-                                            o.connection.send(JSON.stringify({type: "offer", offer: request.offer, person_id: user.person_id}));
+                                            if(o.user.person_id !== user.person_id) {
+                                                o.connection.send(JSON.stringify({type: "offer", offer: request.offer, person_id: user.person_id}));
+                                            }
                                         }
                                     }
-                                    this.peerManager.addToRoomOrCreateRoom(connection_room_id, {user: user, connection: ws });
-
                                     ws.send(JSON.stringify({type: "status", status: "enter_room"}))
                                 } else {
                                     ws.send(JSON.stringify({type: "error", error: "no_room_requested"}));

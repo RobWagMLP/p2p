@@ -8,7 +8,7 @@ import fs from 'fs';
 dotenv.config({ path: '.env' });
 
 if(process.env.ENV === 'local') {
-    console.log("Local env, disbaling cert validation")
+    console.log("Local env, disabling cert validation")
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 }
 
@@ -25,6 +25,7 @@ const cred = {
 const httpsServ = https.createServer(cred, app);
 
 const socket = new Socket(httpsServ);
+
 socket.initSocket();
 
 console.log("Socket initialized");
