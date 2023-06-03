@@ -172,6 +172,24 @@ export class Socket {
                                 }                                                 
                         }
                         break;
+                        case 'send_offer_to_single_peers': {
+                            if(connection_room_id >= 0) {
+                                    const room = this.peerManager.getRoom(connection_room_id);
+                                    const person_id_receive = request.person_id_receive;
+                                    
+                                    if(room != null) {
+                                        for(const o of room) {
+                                            if(o.user.person_id === person_id_receive) {
+                                                o.connection.send(JSON.stringify({type: "offer", offer: request.offer, person_id: user.person_id}));
+                                            }
+                                        }
+                                    }
+                                    ws.send(JSON.stringify({type: "status", status: "enter_room"}))
+                                } else {
+                                    ws.send(JSON.stringify({type: "error", error: "no_room_requested"}));
+                                }                                                 
+                        }
+                        break;
                         case 'accept_offer_from_peer': {
                             const room_id = connection_room_id;
 
@@ -190,17 +208,29 @@ export class Socket {
                         break;
                         case 'send_ice_candidate_to_peers': {
                             const room_id = connection_room_id;
+                            const person_id_receive = request.person_id_receive;
 
                             if(room_id > 0) {
                                 const room = this.peerManager.getRoom(room_id);
 
                                 for(const o of room) {
-                                    if(o.user.person_id !== user.person_id) {
+                                    if(o.user.person_id === person_id_receive) {
                                         o.connection.send(JSON.stringify({type: "ice_candidate", candidate: request.candidate, person_id: user.person_id}));
                                     }
                                 }
                             } else {
                                 ws.send(JSON.stringify({type: "error", error: "no room set for ice candidate"}));
+                            }
+                        }
+                        case 'message': {
+                            if(connection_room_id > 0) {
+                                const room = this.peerManager.getRoom(connection_room_id);
+
+                                for(const o of room) {
+                                    if(o.user.person_id !== user.person_id) {
+                                        o.connection.send(JSON.stringify({type: "message", message: request.message}));
+                                    }
+                                }
                             }
                         }
                         break;
