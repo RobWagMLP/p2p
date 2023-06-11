@@ -7,6 +7,7 @@ import { User } from '../interfaces/user.ts';
 import jwt from 'jsonwebtoken'
 import fetch, {Response} from "node-fetch";
 import { DBResult, ResultStatus } from "../interfaces/db.ts";
+import { IncomingRequestType, OutgoingRequestType} from './socketenums.ts'
 
 
 interface Info {
@@ -38,6 +39,8 @@ export class Socket {
         let userObj = {};
       
         console.log(info.req.url);
+        const perString = info.req.url.split("=");
+        const person_id =  perString.length > 1 ? parseInt(perString[1]) : null;
 
         if(info.req.headers['x-amzn-oidc-data']) {
 
@@ -62,6 +65,10 @@ export class Socket {
                 userObj["email"]     = jwtVer["email"];
                 userObj["user_roles"]= jwtVer["user_roles"];
 
+                if(person_id != null && userObj["person_id"] !== person_id) {
+                    return false;
+                }
+
             } catch(err: any) {
                 console.log(err);
                 return false;
@@ -69,7 +76,6 @@ export class Socket {
 
         } else if(info.req.url.includes("?") && process.env.ENV === 'local') { // only for local testing
             try {
-                const person_id = parseInt(info.req.url.split("=") [1]);
                 userObj["person_id"] = person_id;
                 //userObj = JSON.parse(info.req.headers['user-data'] as string);
             } catch(err: any) {
@@ -111,20 +117,25 @@ export class Socket {
         }
 
         for(const o of room) {
-            o.connection.send(JSON.stringify({type: "order", order: "disconnect"}));
+            o.connection.send(JSON.stringify({type: OutgoingRequestType.Order, order: "disconnect"}));
             o.connection.close();
         }
         this.peerManager.removeRoom(room_id);
     }
 
     initSocket() {
+
+        this.wss.on('error', (error: Error) => {
+            console.log(error);
+        })
+
         this.wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
             
             const user: User | undefined = this.peerManager.getUser(req);
             let connection_room_id = -1;
 
             if(user == null) {
-                ws.send(JSON.stringify({type: "error", error: "unknwon user"}));
+                ws.send(JSON.stringify({type: OutgoingRequestType.Error, error: "unknwon user"}));
                 return;
             }
 
@@ -138,75 +149,76 @@ export class Socket {
                     const request = JSON.parse(data.toString());
 
                     switch(request.type) {
-                        case 'request_room': {
+                        case IncomingRequestType.RequestRoom: {
                             const room_id = request['room_id'];
 
                             this.peerHasAccesToRoom(room_id, user.person_id, (access: boolean)   => { 
  
                                 if(access) {
                                     connection_room_id = room_id;
-                                    const userList = this.peerManager.getUserList(room_id);
+                                    const userList = this.peerManager.getUserList(room_id, user.person_id);
 
                                     this.peerManager.addToRoomOrCreateRoom(connection_room_id, {user: user, connection: ws });
                                   
-                                    ws.send(JSON.stringify({type: "room_info", userlist: userList}))
+                                    ws.send(JSON.stringify({type: OutgoingRequestType.RoomInfo, userlist: userList}))
                                 } else {
-                                    ws.send(JSON.stringify({type: "error", error: "no_access_to_room"}));
+                                    ws.send(JSON.stringify({type: OutgoingRequestType.Error, error: "no_access_to_room"}));
                                 }
                             })                  
                         }
-                        case 'send_offer_to_peers': {
+                        break;
+                        case IncomingRequestType.SendOfferToPeers: {
                             if(connection_room_id >= 0) {
                                     const room = this.peerManager.getRoom(connection_room_id);
 
                                     if(room != null) {
                                         for(const o of room) {
                                             if(o.user.person_id !== user.person_id) {
-                                                o.connection.send(JSON.stringify({type: "offer", offer: request.offer, person_id: user.person_id}));
+                                                o.connection.send(JSON.stringify({type: OutgoingRequestType.Offer, offer: request.offer, person_id: user.person_id}));
                                             }
                                         }
                                     }
-                                    ws.send(JSON.stringify({type: "status", status: "enter_room"}))
+                                    ws.send(JSON.stringify({type: OutgoingRequestType.Status, status: "enter_room"}))
                                 } else {
-                                    ws.send(JSON.stringify({type: "error", error: "no_room_requested"}));
+                                    ws.send(JSON.stringify({type: OutgoingRequestType.Error, error: "no_room_requested"}));
                                 }                                                 
                         }
                         break;
-                        case 'send_offer_to_single_peers': {
+                        case IncomingRequestType.SendOfferToSinglePeer: {
                             if(connection_room_id >= 0) {
                                     const room = this.peerManager.getRoom(connection_room_id);
                                     const person_id_receive = request.person_id_receive;
-                                    
+
                                     if(room != null) {
                                         for(const o of room) {
                                             if(o.user.person_id === person_id_receive) {
-                                                o.connection.send(JSON.stringify({type: "offer", offer: request.offer, person_id: user.person_id}));
+                                                o.connection.send(JSON.stringify({type: OutgoingRequestType.Offer, offer: request.offer, person_id: user.person_id}));
                                             }
                                         }
                                     }
-                                    ws.send(JSON.stringify({type: "status", status: "enter_room"}))
+                                    ws.send(JSON.stringify({type: OutgoingRequestType.Status, status: "enter_room"}))
                                 } else {
-                                    ws.send(JSON.stringify({type: "error", error: "no_room_requested"}));
+                                    ws.send(JSON.stringify({type: OutgoingRequestType.Error, error: "no_room_requested"}));
                                 }                                                 
                         }
                         break;
-                        case 'accept_offer_from_peer': {
+                        case IncomingRequestType.AcceptOfferFromPeers: {
                             const room_id = connection_room_id;
 
                             if(room_id > 0) {
                                 const room = this.peerManager.getRoom(room_id);
 
                                 for(const o of room) {
-                                    if(o.user.person_id !== user.person_id) {
-                                        o.connection.send(JSON.stringify({type: "answer", answer: request.answer, person_id: user.person_id}));
+                                    if(o.user.person_id === request.person_id) {
+                                        o.connection.send(JSON.stringify({type: OutgoingRequestType.Answer, answer: request.answer, person_id: user.person_id}));
                                     }
                                 }
                             } else {
-                                ws.send(JSON.stringify({type: "error", error: "no room set for offer"}));
+                                ws.send(JSON.stringify({type: OutgoingRequestType.Error, error: "no room set for offer"}));
                             }
                         }
                         break;
-                        case 'send_ice_candidate_to_peers': {
+                        case IncomingRequestType.SendIceCandidateToPeers: {
                             const room_id = connection_room_id;
                             const person_id_receive = request.person_id_receive;
 
@@ -215,20 +227,35 @@ export class Socket {
 
                                 for(const o of room) {
                                     if(o.user.person_id === person_id_receive) {
-                                        o.connection.send(JSON.stringify({type: "ice_candidate", candidate: request.candidate, person_id: user.person_id}));
+                                        o.connection.send(JSON.stringify({type: OutgoingRequestType.IceCandidate, candidate: request.candidate, person_id: user.person_id}));
                                     }
                                 }
                             } else {
-                                ws.send(JSON.stringify({type: "error", error: "no room set for ice candidate"}));
+                                ws.send(JSON.stringify({type: OutgoingRequestType.Error, error: "no room set for ice candidate"}));
                             }
                         }
-                        case 'message': {
+                        break;
+                        case IncomingRequestType.Message: {
+                            console.log(request.message)
                             if(connection_room_id > 0) {
                                 const room = this.peerManager.getRoom(connection_room_id);
 
                                 for(const o of room) {
                                     if(o.user.person_id !== user.person_id) {
-                                        o.connection.send(JSON.stringify({type: "message", message: request.message}));
+                                        o.connection.send(JSON.stringify({type: OutgoingRequestType.Message, message: request.message}));
+                                    }
+                                }
+                            }
+                        }
+                        break;
+                        case IncomingRequestType.PeerClosed: {
+
+                            if(connection_room_id > 0) {
+                                const room = this.peerManager.getRoom(connection_room_id);
+
+                                for(const o of room) {
+                                    if(o.user.person_id !== user.person_id) {
+                                        o.connection.send(JSON.stringify({type: OutgoingRequestType.ClosePeer, person_id_close: user.person_id}));
                                     }
                                 }
                             }
@@ -238,7 +265,7 @@ export class Socket {
                     }
                     
                 } catch(err) {
-                    ws.send(JSON.stringify({type: "error", error: "invalid_data_sent"}));
+                    ws.send(JSON.stringify({type: OutgoingRequestType.Error, error: "invalid_data_sent"}));
                 }
             })
 

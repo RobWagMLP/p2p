@@ -4,7 +4,8 @@ export enum IncomingRequestType {
     SendOfferToSinglePeer   = 3,
     AcceptOfferFromPeers    = 4,
     SendIceCandidateToPeers = 5,
-    Message                 = 6
+    Message                 = 6,
+    PeerClosed              = 7,
 }
 
 export enum OutgoingRequestType {
@@ -15,5 +16,6 @@ export enum OutgoingRequestType {
     Answer       = 5, 
     IceCandidate = 6,
     Order        = 7,
-    Message      = 8
+    Message      = 8,
+    ClosePeer    = 9,
 }

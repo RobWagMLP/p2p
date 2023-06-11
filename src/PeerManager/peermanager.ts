@@ -12,11 +12,11 @@ export class PeerManager {
     }
 
     addUser(user: User, req: IncomingMessage): boolean {
-        for(const o of this.userMap) {
-            if(o[1].person_id === user.person_id) {
-                return false;
+        this.userMap.forEach((value: User, key: IncomingMessage) => {
+            if(value.person_id === user.person_id) {
+                this.userMap.delete(key);
             }
-        }
+        });
         this.userMap.set(req, user);
         return true;
     }
@@ -60,37 +60,44 @@ export class PeerManager {
         return -1;
     }
 
-    getUserList(room_id: number): Array<number> {
+    getUserList(room_id: number, person_id_exclude: number): Array<number> {
         const out = [];
         const user = this.connectionMap.get(room_id);
         if(user == null) {
             return out;
         }
         for(const o of user) {
-            out.push(o.user.person_id);
+            if(o.user.person_id !== person_id_exclude) {
+                out.push(o.user.person_id);
+            }
         }
         return out;
     }
 
     removePeer(req: IncomingMessage, room_id: number) {
-        const person_id = this.userMap.get(req).person_id;
+        const person_id = this.userMap.get(req)?.person_id;
 
         if(person_id != null) {
-            this.userMap.delete(req);
             const userArr = this.connectionMap.get(room_id);
 
             if(userArr == null) {
                 return;
             }
             for(const o in userArr) {
-                if(userArr[o].user.person_id === person_id) {
-                    const newArr = userArr.splice(parseInt(o), 1);
 
-                    this.connectionMap.set(room_id, newArr);
+                if(userArr[o].user.person_id === person_id) {
+                    userArr.splice(parseInt(o), 1);
+
+                    this.connectionMap.set(room_id, userArr);
                     return;
                 }
             }
+            if(this.connectionMap.get(room_id).length === 0){
+                this.removeRoom(room_id);
+            }
             
         }
+        this.userMap.delete(req);
+        console.log(this.userMap.size, this.connectionMap.size);
     }
 }

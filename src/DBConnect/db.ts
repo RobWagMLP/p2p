@@ -38,7 +38,6 @@ export class DB {
             paramsArr.push(params[o]);
         }
         callstring += ');';
-        console.log(callstring, paramsArr);
         try{
             client.query(callstring, paramsArr, (err: Error, res: pkg.QueryResult) => {
                 if(err) {
