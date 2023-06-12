@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "test",
-    "run": "ts-node-esm src/server.ts ",
+    "run": "npx ts-node-esm src/server.ts ",
     "run_local": "sh build.sh local"
   },
   "author": "Robert Wagner",

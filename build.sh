@@ -1,11 +1,11 @@
+environment=$1
+
 echo "Building selected environment \"$environment\""
 envFile=".env"
 cp "env/$environment.env" "$envFile"
-source "$envFile"
-echo "Building $environment"
 
-sudo -u postgres psql -c 'create database pssrv where NOT EXISTS (SELECT FROM pg_database WHERE datname = 'pssrv')\gexec'
+echo "Building database"
+
+sudo -u postgres psql -c "select 'create database pssrv' where NOT EXISTS (SELECT FROM pg_database WHERE datname = 'pssrv');"
 
 sh dbdeploy.sh
-
-npx ts-node-esm src/server.ts
