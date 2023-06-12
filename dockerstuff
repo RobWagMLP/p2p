@@ -1,7 +1,0 @@
-dockersetup steps:
-
-setup postgres to listen on
-
-0.0.0.0 / 5432 postgres/pwpostgres
-
-node js, dbdeploy, copy all

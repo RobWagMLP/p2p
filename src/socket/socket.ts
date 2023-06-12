@@ -1,5 +1,5 @@
 import { WebSocketServer, WebSocket, RawData } from "ws";
-import * as https from 'https'
+import * as http from 'http'
 import { PeerManager } from '../PeerManager/peermanager.ts';
 import { DB } from '../DBConnect/db.ts';
 import { IncomingMessage, OutgoingHttpHeaders } from 'http';
@@ -22,8 +22,8 @@ export class Socket {
     private peerManager: PeerManager;
     private db: DB;
     
-    constructor(https: https.Server) {
-        this.wss = new WebSocketServer({server: https, 
+    constructor(http: http.Server) {
+        this.wss = new WebSocketServer({server: http, 
                                 verifyClient: (info: Info, callback: (res: boolean, code?: number, message?: string, headers?: OutgoingHttpHeaders) => void ) => {
                                     this.verifyClientInfo(info).then((value: boolean) => callback(value) );
                                 }

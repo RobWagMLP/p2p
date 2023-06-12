@@ -1,9 +1,8 @@
-import * as https from 'https'
+import * as http from 'http'
 import express, {Request, Response}  from 'express'
 import * as dotenv from "dotenv";
 import { Socket } from './socket/socket.ts';
 import { HTTPServer } from './HtppServer/httpserver.ts';
-import fs from 'fs';
 
 dotenv.config({ path: '.env' });
 
@@ -17,12 +16,7 @@ const host: string = process.env.APP_HOST ?? "127.0.0.1";
 
 const app = express();
 
-const cred = {
-    key:  process.env.CERT_KEY,
-    cert: process.env.CERT_CERT,
-};
-
-const httpsServ = https.createServer(cred, app);
+const httpsServ = http.createServer(app);
 
 const socket = new Socket(httpsServ);
 

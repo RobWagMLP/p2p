@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  reverse_proxy:
+    container_name: p2p-reverse-proxy
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:8080:80
+    build:
+      context: ./path/to/Dockerfile.frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - p2p-bridge
+  backend:
+    container_name: p2p-backend
+    restart: unless-stopped
+    build:
+      context: ./path/to/Dockerfile.backend
+    expose:
+        - 4430
+    env_file:
+      - .env
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: "wget --no-verbose --tries=1 --spider http://localhost:8080/healthcheck || exit 1"
+      interval: 5s
+      timeout: 30s
+      retries: 3
+    networks:
+      - p2p-bridge
+  database:
+    container_name: p2p-database
+    image: postgres:15-alpine
+    restart: unless-stopped
+    expose:
+      - 5432
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'"]
+      interval: 5s
+      timeout: 30s
+      retries: 3
+    networks:
+      - p2p-bridge
+
+networks:
+  p2p-bridge:
+    driver: bridge
