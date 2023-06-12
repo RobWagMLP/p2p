@@ -102,6 +102,7 @@ export class PeerManager {
             
         }
         this.userMap.delete(req);
+        
         console.log(this.userMap.size, this.connectionMap.size);
     }
 }

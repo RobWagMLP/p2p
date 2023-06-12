@@ -15,8 +15,8 @@ declare
   v_participants     alias for participants;
   v_datetime_open    alias for datetime_open;
 begin   
-
-   if array_length(v_participants) = 0 then
+   raise notice '%', v_participants;
+   if array_length(v_participants, 1) = 0 then
       perform sp_raise_exception(1000001);
    end if;
 

@@ -1,10 +1,16 @@
-WARNING: This version of Flyway is out of date. Upgrade to Flyway 9.0.0: https://rd.gt/3rXiSlV
-
 Flyway Teams Edition 7.14.1 by Redgate
 Database: jdbc:postgresql:pssrv (PostgreSQL 12.14)
 ----------------------------------------
 Flyway Teams features are enabled by default for the next 14 days. Learn more at https://rd.gt/3A4IWym
 ----------------------------------------
-Successfully validated 14 migrations (execution time 00:00.208s)
+Successfully validated 16 migrations (execution time 00:00.058s)
 Current version of schema "public": 1.0.0.0002
-Schema "public" is up to date. No migration necessary.
+Migrating schema "public" with repeatable migration "sp create consultation room"
+DB: 2023-06-12 18:46:41.908433+02,DROP FUNCTION public.sp_create_consultation_room(room_id bigint, person_id_create bigint, participants bigint[], datetime_open timestamp with time zone)
++------------------+
+| sp_drop_function |
++------------------+
+|                  |
++------------------+
+
+Successfully applied 1 migration to schema "public" (execution time 00:00.142s)
