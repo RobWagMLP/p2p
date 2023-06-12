@@ -31,7 +31,11 @@ export class PeerManager {
 
     addToRoomOrCreateRoom(room_id: number, connection: UserConnection) {
         const con: Array<UserConnection> = this.connectionMap.get(room_id) ?? [];
-        
+        for(const o of con) {
+            if(o.user.person_id === connection.user.person_id)  {
+                return;
+            }
+        }
         con.push(connection);
 
         this.connectionMap.set(room_id, con);
@@ -66,6 +70,7 @@ export class PeerManager {
         if(user == null) {
             return out;
         }
+        console.log(user);
         for(const o of user) {
             if(o.user.person_id !== person_id_exclude) {
                 out.push(o.user.person_id);
@@ -89,7 +94,6 @@ export class PeerManager {
                     userArr.splice(parseInt(o), 1);
 
                     this.connectionMap.set(room_id, userArr);
-                    return;
                 }
             }
             if(this.connectionMap.get(room_id).length === 0){

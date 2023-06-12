@@ -33,7 +33,7 @@ services:
     networks:
       - p2p-bridge
   flyway:
-    image: flyway/flyway:6.3.1
+    image: flyway/flyway:7.14.1
     command: -configFiles=/flyway/conf/flyway.config -locations=filesystem:/flyway/sql -connectRetries=60 migrate
     volumes:
       - ${PWD}/sql_versions:/flyway/sql
